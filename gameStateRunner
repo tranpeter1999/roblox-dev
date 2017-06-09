@@ -1,0 +1,100 @@
+local camera = game.Workspace.CurrentCamera
+local player = game.Players.LocalPlayer
+repeat wait() until player.Character ~= nil and player.Character.Parent ~= nil
+local char = player.Character
+local hrp = player.Character:WaitForChild("HumanoidRootPart")
+
+local function checkGuis(part)
+	for _,v in pairs(player.PlayerGui:GetChildren())do
+		if v.ClassName == "BillboardGui" and v.Adornee == part then
+			return v
+		end
+	end
+	return 0
+end
+
+--main
+game:GetService("RunService").RenderStepped:connect(function()
+	--door control
+	for _,v in pairs(game.Workspace:GetChildren())do
+		local type = v:FindFirstChild("type")
+		
+		if type then
+			if type.Value == "door" then
+				--gui controller
+				local bbGui
+				
+				if checkGuis(v.Center) == 0 then
+					bbGui = game.ReplicatedStorage.guis.DoorGui:Clone()
+					bbGui.Name = v:GetFullName()
+					bbGui.Adornee = v.Center
+					bbGui.Parent = player.PlayerGui
+					
+					bbGui.Frame.Frame.MouseEnter:connect(function()
+						bbGui.Frame:TweenSize(UDim2.new(.5,0,.5,0),"InOut","Linear",0.1,true)
+						bbGui.Frame.Hovered.Value = 1
+						bbGui.Frame.TextFrame.Visible = true
+						bbGui.Frame.DoorImage.Visible = false
+					end)
+					
+					bbGui.Frame.Frame.MouseLeave:connect(function()
+						bbGui.Frame:TweenSize(UDim2.new(.25,0,.5,0),"InOut","Linear",0.1,true)
+						bbGui.Frame.Hovered.Value = 0
+						bbGui.Frame.TextFrame.Visible = false
+						bbGui.Frame.DoorImage.Visible = true
+					end)
+					
+					bbGui.Frame.TextFrame.Button.MouseButton1Down:connect(function()
+						game.Workspace.modules.setBooleanState:InvokeServer(player,v.state,true)
+					end)
+				end
+				
+				bbGui = checkGuis(v.Center)
+				
+				if (v.Center.Position - hrp.Position).magnitude <= 8 and v.state.Value == false then
+					if bbGui.Frame.Hovered.Value == 0 then
+						bbGui.Frame:TweenSize(UDim2.new(.25,0,.5,0),"InOut","Linear",0.1,true)
+					end
+				else
+					bbGui.Frame:TweenSize(UDim2.new(0,0,.5,0),"InOut","Linear",0.1,true)
+					bbGui.Frame.Hovered.Value = 0
+					bbGui.Frame.TextFrame.Visible = false
+					bbGui.Frame.DoorImage.Visible = true
+				end
+
+				--state controller
+				local state = v:findFirstChild("state")
+				
+				if state then
+					if state.Value == false then
+						local dist = (v.Door1.Position-v.Door1Closed.Position).magnitude
+						
+						if dist > 0 then
+							local alpha = 0.1*1/dist
+							
+							if alpha > 1 then
+								alpha = 1
+							end
+								
+							v.Door1.CFrame = v.Door1.CFrame:lerp(v.Door1Closed.CFrame,alpha)
+							v.Door2.CFrame = v.Door2.CFrame:lerp(v.Door2Closed.CFrame,alpha)
+						end
+					else
+						local dist = (v.Door1.Position-v.Door1Open.Position).magnitude
+						
+						if dist > 0 then
+							local alpha = 0.1*1/dist
+
+							if alpha > 1 then
+								alpha = 1
+							end
+							
+							v.Door1.CFrame = v.Door1.CFrame:lerp(v.Door1Open.CFrame,alpha)
+							v.Door2.CFrame = v.Door2.CFrame:lerp(v.Door2Open.CFrame,alpha)
+						end
+					end
+				end
+			end
+		end
+	end
+end)
