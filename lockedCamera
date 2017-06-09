@@ -1,0 +1,66 @@
+local camera = game.Workspace.CurrentCamera
+local player = game.Players.LocalPlayer
+repeat wait() until player.Character ~= nil and player.Character.Parent ~= nil
+local char = player.Character
+local hrp = player.Character:WaitForChild("HumanoidRootPart")
+
+--declarables
+local zoom = 10
+local acceleration = 0
+local maxAcceleration = 3 -- in studs/frame
+
+--mouse wheel controls (scroll down is negative, scroll up is positive for input.Position.Z)
+game:GetService("UserInputService").InputChanged:connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseWheel then
+		if input.Position.Z > 0 then
+			--scroll in
+			if acceleration > -maxAcceleration then
+				acceleration = acceleration - 0.1
+				
+				if acceleration < -maxAcceleration then
+					acceleration = -maxAcceleration
+				end
+			end
+		elseif input.Position.Z < 0 then
+			--scroll out
+			if acceleration < maxAcceleration then
+				acceleration = acceleration + 0.1
+				
+				if acceleration > maxAcceleration then
+					acceleration = maxAcceleration
+				end
+			end
+		end
+	end
+end)
+
+--camera positioning
+game:GetService("RunService").RenderStepped:connect(function()
+	--zoom and acceleration adjustment
+	if math.abs(acceleration) > 0 then
+		zoom = zoom + acceleration
+		
+		if zoom > player.CameraMaxZoomDistance then
+			zoom = player.CameraMaxZoomDistance
+			
+			acceleration = 0
+		elseif zoom < player.CameraMinZoomDistance then
+			zoom = player.CameraMinZoomDistance
+			
+			acceleration = 0
+		end
+		
+		if acceleration > 0 then
+			acceleration = acceleration - 0.02
+		elseif acceleration < 0 then
+			acceleration = acceleration + 0.02
+		end
+		
+		if math.abs(acceleration) < 0.04 then
+			acceleration = 0
+		end
+	end
+
+	--camera setting
+	camera.CFrame = CFrame.new(hrp.Position+Vector3.new(0,zoom,zoom/3),hrp.Position)
+end)
