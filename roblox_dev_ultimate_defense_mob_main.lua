@@ -54,7 +54,7 @@ function module.findTarget(mob,args) --args = {playerFocus = 0.5, coreFocus = 1,
 	end
 	
 	return target
-end -- retuns a BasePart = target's HumanoidRootPart or nil
+end --retuns a BasePart = target's HumanoidRootPart or nil
 
 function module.findTargetSmart(mob,args) --args = {playerFocus = 0.5, coreFocus = 1, buildingFocus = 0.2, maxRange = 1000, maxPathfindRange = 200}
 	local mobHRP = mob:FindFirstChild("HumanoidRootPart") or return nil
@@ -110,7 +110,7 @@ function module.findTargetSmart(mob,args) --args = {playerFocus = 0.5, coreFocus
 	else
 		return target
 	end
-end -- returns a Path or a BasePart = target's HumanoidRootPart or nil
+end --returns a Path or a BasePart = target's HumanoidRootPart or nil
 
 --[[
 
@@ -118,15 +118,27 @@ MODULES B: Walk to Target, pathing or not
 
 ]]--
 
-function module.walkToTarget(mob,var)
+function module.walkToTarget(mob,var) --takes a mob and moves it towards var where var = BasePart or Path
 	local mobHRP = mob:FindFirstChild("HumanoidRootPart") or return nil
-	local mobHuman = mob:FindFirstChild("Humanoid") or return nil
+	local mobSpeed = mob:FindFirstChild("Speed") or return nil
+	local mobBV = mobHRP:FindFirstChild("MoverLegs") or return nil --MoverLegs = BodyVelocity
 	
 	if var:IsA("BasePart") then
-		mobHuman:WalkTo(var.Position,var)
+		local p1, p2 = mobHRP.Position, var.Position
+		
+		mobBV.Velocity = CFrame.new(p1,Vector3.new(p2.X,p1.Y,p2.Z)).lookVector * mobSpeed.Value
 	else
 		local wayPoints = var:GetWaypoints()
 		
-		
+		if #wayPoints >= 1 then
+			for i = 1,#wayPoints do
+				local currPoint = wayPoints[i]
+				local p1, p2 = mobHRP.Position, currPoint.Position
+				
+				mobBV.Velocity = CFrame.new(p1,Vector3.new(p2.X,p1.Y,p2.Z)).lookVector * mobSpeed.Value
+				
+				
+			end
+		end
 	end
 end
