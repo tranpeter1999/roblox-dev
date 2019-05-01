@@ -19,13 +19,26 @@
 --we'll let players discard locally, and update the discard list when we send the player's action choice
 --create RemoteEvent in Remotes.BattleState named "Action"
 
+local playerData = require(game.ServerScriptService.PlayerDataManager)
+
 --store hands like this
+local decks = {}
 local hands = {}
-local deckCopy = HttpService:JSONDecode(player.stats.decks:FindFirstChild(player.stats.equipment.deck.Value))
-deckCopy["DeckName"] = nil
-for i = 1,7 do
-	hands[member][i] = 
+
+for _,player in pairs(battle.Players)do
+	local deck = playerData.getDeck(player, playerData.getEquippedDeck(player))
+	decks[player] = deck
+	decks[player]["DeckName"] = nil
+	
+	hands[player] = {}
+	
+	for i = 1,7 do
+		local drawnCard = math.random(1,#decks[player])
+		hands[player][i] = decks[player][drawnCard]
+		decks[player][drawnCard] = nil
+	end
 end
+
 
 --SERVER
 --turn timer set to 30, counts down

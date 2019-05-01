@@ -7,17 +7,21 @@ local playerData = DataStoreService:GetDataStore("PlayerData"..version)
 local sessionData = {}
  
 local AUTOSAVE_INTERVAL = 60
- 
-function PlayerStatManager:ChangeStat(player, statName, value)
-	assert(typeof(sessionData[playerUserId][statName]) == typeof(value), "ChangeStat error: types do not match")
+
+local function getDeck(player, deckName)
 	local playerUserId = "Player_" .. player.UserId
-	if typeof(sessionData[playerUserId][statName]) == "number" then
-		sessionData[playerUserId][statName] = sessionData[playerUserId][statName] + value
-	else
-		sessionData[playerUserId][statName] = value
+	if sessionData[playerUserId] then
+		return sessionData[playerUserId].decks
 	end
 end
- 
+
+local function getEquippedDeck(player)
+	local playerUserId = "Player_" .. player.UserId
+	if sessionData[playerUserId]] then
+		return sessionData[playerUserId].equipment.deck
+	end
+end
+
 local function setupPlayerData(player)
 	local playerUserId = "Player_" .. player.UserId
 	local success, data = pcall(function()
@@ -82,14 +86,15 @@ local function setupPlayerData(player)
 		end
 	elseif online and onlineState ~= 0 then
 		warn(player.Name .. " is online, yet still connected to a server...? Lag, or exploiting?")
-		player:Kick("Unable to connect to server, already online!")
+		player:Kick("Unable to connect to server, you may already be connected. Please try again later.")
 	else
 		warn("Cannot access data store for player!")
-		player:Kick("Unable to connect to server, servers may be down")
+		player:Kick("Unable to properly connect to server, data store servers may be down, or slow. Please try again later.")
 	end
 end
 
 local savingData = {}
+local closing = false
  
 local function savePlayerData(playerUserId)
 	spawn(function()
@@ -105,7 +110,7 @@ local function savePlayerData(playerUserId)
 				end)
 				if not success then
 					warn("Cannot save data for player!, trying again in 10 seconds")
-					wait(10)
+					if closing then wait(3) else wait(10) end
 				end
 			end
 			
